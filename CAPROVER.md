@@ -21,6 +21,15 @@ PORT=80
 NODE_ENV=production
 ```
 
+### Alternative untuk CapRover Internal Database:
+Jika menggunakan database internal CapRover:
+```
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=serverchat
+PORT=80
+NODE_ENV=production
+```
+
 ### Optional Variables:
 ```
 REDIS_URL=redis://your-redis-host:6379
@@ -74,24 +83,41 @@ curl https://chatserver.your-caprover-domain.com/api/users
 
 ### Common Issues:
 
-1. **Database Migration Fails:**
+1. **Prisma OpenSSL Error (libssl.so.1.1 not found):**
+   ```
+   Solution: Using Dockerfile.debian instead of Alpine
+   captain-definition now uses "./Dockerfile.debian"
+   Debian base image includes required OpenSSL libraries
+   ```
+
+2. **Database Migration Fails:**
    ```
    Solution: Check DATABASE_URL environment variable
+   Use start-caprover.sh script for better error handling
    ```
 
-2. **Port Issues:**
+3. **Port Issues:**
    ```
    Solution: Ensure PORT=80 in environment variables
+   start-caprover.sh automatically sets PORT=80
    ```
 
-3. **Build Timeout:**
+4. **Build Timeout:**
    ```
    Solution: Increase build timeout in CapRover settings
    ```
 
-4. **Prisma Client Error:**
+5. **Prisma Client Error:**
    ```
    Solution: Check if prisma generate runs successfully in build logs
+   binaryTargets now includes "linux-musl" for compatibility
+   ```
+
+6. **Database Connection Issues:**
+   ```
+   Solution: start-caprover.sh detects and handles multiple connection scenarios:
+   - External database via DATABASE_URL
+   - CapRover internal database via POSTGRES_* variables
    ```
 
 ### Check Logs:
