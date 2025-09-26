@@ -5,7 +5,7 @@ require("dotenv").config();
 
 // Import configurations
 const initializeSocket = require("./src/config/socket");
-const prisma = require("./src/config/database");
+const pool = require("./src/config/database");
 
 // Import middleware
 const { errorHandler, notFound } = require("./src/middleware/errorHandler");
@@ -63,9 +63,9 @@ const gracefulShutdown = async (signal) => {
       console.log("HTTP server closed.");
     });
 
-    // Disconnect from database
-    await prisma.$disconnect();
-    console.log("Database connection closed.");
+    // Close database connection pool
+    await pool.end();
+    console.log("Database connection pool closed.");
 
     // Close socket.io
     io.close(() => {

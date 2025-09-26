@@ -1,236 +1,97 @@
-# CapRover Deployment Guide
+# CapRover Deployment Guide - Updated (No Prisma)
 
-Panduan untuk deploy Chat Server ke CapRover.
+Panduan untuk deploy Chat Server ke CapRover tanpa Prisma.
 
 ## Files yang Diperlukan
 
 ✅ Sudah tersedia:
+
 - `captain-definition` - Konfigurasi CapRover
-- `Dockerfile` - Container build instructions  
-- `start.sh` - Startup script dengan migration
+- `Dockerfile` - Container build instructions (simplified)
 - `.dockerignore` - Optimasi build
+- `database-schema.sql` - Manual database setup
 
 ## Environment Variables di CapRover
 
 Set environment variables berikut di CapRover dashboard:
 
 ### Required Variables:
-```
-DATABASE_URL=postgresql://postgres:72e731d037f53f07@178.128.49.224:5432/serverchat?schema=public
-PORT=80
-NODE_ENV=production
-```
 
-### Alternative untuk CapRover Internal Database:
-Jika menggunakan database internal CapRover:
 ```
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=serverchat
+DATABASE_URL=postgresql://username:password@host:port/database
 PORT=80
 NODE_ENV=production
 ```
 
 ### Optional Variables:
+
 ```
-REDIS_URL=redis://your-redis-host:6379
+CORS_ORIGIN=*
+```
+
+## Setup Database Manual
+
+Sebelum deployment, setup database schema terlebih dahulu:
+
+```bash
+# Connect ke PostgreSQL database dan jalankan:
+psql -d your_database -f database-schema.sql
 ```
 
 ## Deployment Steps
 
-### 1. Persiapkan Repository
-```bash
-git add .
-git commit -m "Add CapRover deployment files"
-git push origin main
-```
+1. **Setup Database Schema**
+   - Jalankan `database-schema.sql` di PostgreSQL database Anda
 
-### 2. Setup di CapRover Dashboard
+2. **Set Environment Variables di CapRover**
+   - `DATABASE_URL`: Connection string PostgreSQL Anda
+   - `PORT`: 80 (default untuk CapRover)
+   - `NODE_ENV`: production
 
-1. **Create New App:**
-   - App Name: `chatserver` (atau nama lain)
-   - Choose deployment method: `Deploy from Github/Bitbucket/Gitlab`
-
-2. **Connect Repository:**
-   - Repository: `https://github.com/aswatji/serverchat`
-   - Branch: `main`
-   - Username: `aswatji`
-   - Password/Token: `[your-github-token]`
-
-3. **Set Environment Variables:**
-   ```
-   DATABASE_URL=postgresql://postgres:72e731d037f53f07@178.128.49.224:5432/serverchat?schema=public
-   PORT=80
-   NODE_ENV=production
-   ```
-
-4. **Deploy:**
-   - Click "Force Build"
-   - Monitor deployment logs
-
-### 3. Verify Deployment
-
-Setelah deployment sukses, test endpoints:
-
-```bash
-# Health check
-curl https://chatserver.your-caprover-domain.com/
-
-# API test
-curl https://chatserver.your-caprover-domain.com/api/users
-```
+3. **Deploy via Git atau Tar**
+   - Push ke repository atau upload tar file
+   - CapRover akan otomatis build dengan Dockerfile
 
 ## Troubleshooting
 
-### Common Issues:
-
-1. **Prisma OpenSSL Error (libssl.so.1.1 not found):**
-   ```
-   Solution: Using Dockerfile.debian instead of Alpine
-   captain-definition now uses "./Dockerfile.debian"
-   Debian base image includes required OpenSSL libraries
-   ```
-
-2. **Database Migration Fails:**
-   ```
-   Solution: Check DATABASE_URL environment variable
-   Use start-caprover.sh script for better error handling
-   ```
-
-3. **Port Issues:**
-   ```
-   Solution: Ensure PORT=80 in environment variables
-   start-caprover.sh automatically sets PORT=80
-   ```
-
-4. **Build Timeout:**
-   ```
-   Solution: Increase build timeout in CapRover settings
-   ```
-
-5. **Prisma Client Error:**
-   ```
-   Solution: Check if prisma generate runs successfully in build logs
-   binaryTargets now includes "linux-musl" for compatibility
-   ```
-
-6. **Database Connection Issues:**
-   ```
-   Solution: start-caprover.sh detects and handles multiple connection scenarios:
-   - External database via DATABASE_URL
-   - CapRover internal database via POSTGRES_* variables
-   ```
-
-### Check Logs:
-
-```bash
-# Via CapRover dashboard
-App → Monitoring → View Logs
-
-# Via CLI
-caprover logs --name chatserver
+### 1. Database Connection Error:
+```
+Solution: Pastikan DATABASE_URL benar dan database dapat diakses dari container
 ```
 
-## Performance Settings
+### 2. Port Binding Error:
+```
+Solution: PORT sudah otomatis di-set ke 80 di Dockerfile
+```
 
-### Recommended CapRover Settings:
+### 3. Missing Tables Error:
+```
+Solution: Pastikan database-schema.sql sudah dijalankan di database
+```
+
+## Benefits Tanpa Prisma
+
+✅ **Build lebih cepat** - Tidak perlu generate Prisma client  
+✅ **Image lebih kecil** - Tidak ada Prisma binaries  
+✅ **Deployment lebih stabil** - Tidak ada masalah OpenSSL compatibility  
+✅ **Debug lebih mudah** - SQL queries langsung terlihat  
+
+## Captain Definition
+
+File `captain-definition`:
 
 ```json
 {
-  "instanceCount": 1,
-  "captain-definition": {
-    "schemaVersion": 2,
-    "dockerfilePath": "./Dockerfile"
-  },
-  "containerHttpPort": 80,
-  "notExposeAsWebApp": false,
-  "customNginxConfig": "",
-  "preDeployFunction": "",
-  "serviceUpdateOverride": ""
+  "schemaVersion": 2,
+  "dockerfilePath": "./Dockerfile"
 }
 ```
 
-### Resource Limits:
+## Dockerfile Summary
 
-- **Memory:** 512MB minimum
-- **CPU:** 0.5 cores minimum
+- Base: `node:18-slim`
+- Dependencies: `pg`, `socket.io`, `express`
+- Port: 80
+- Command: `node index.js`
 
-## SSL & Domain
-
-1. **Enable HTTPS:**
-   - CapRover dashboard → Apps → [your-app] → HTTP Settings
-   - Enable "HTTPS" 
-   - Enable "Force HTTPS"
-
-2. **Custom Domain:**
-   - Add custom domain in CapRover
-   - Update DNS settings
-   - Enable SSL certificate
-
-## Scaling
-
-### Horizontal Scaling:
-```bash
-# Increase instance count in CapRover dashboard
-instanceCount: 2
-```
-
-### Database Connection Pooling:
-Update `DATABASE_URL` to include connection pooling:
-```
-DATABASE_URL="postgresql://postgres:72e731d037f53f07@178.128.49.224:5432/serverchat?schema=public&connection_limit=10&pool_timeout=20"
-```
-
-## Monitoring
-
-### Health Checks:
-- CapRover automatically monitors container health
-- Custom health check endpoint: `/`
-- WebSocket monitoring: Auto-enabled
-
-### Logs:
-- Application logs: Available in CapRover dashboard
-- Database logs: Check external PostgreSQL server
-- Access logs: Via CapRover nginx logs
-
-## Backup Strategy
-
-### Database Backup:
-```bash
-# Automated backup (set up cron job)
-pg_dump -h 178.128.49.224 -U postgres -d serverchat > backup_$(date +%Y%m%d).sql
-```
-
-### Application Backup:
-- Source code: Git repository
-- Configuration: CapRover app config export
-- Environment variables: Document securely
-
-## Security
-
-### Environment Variables:
-- Never commit sensitive data to git
-- Use CapRover's secret management
-- Rotate database passwords regularly
-
-### Network Security:
-- Use HTTPS only in production
-- Configure CORS properly
-- Implement rate limiting
-
-## Updates & Maintenance
-
-### Code Updates:
-```bash
-# Push code changes
-git push origin main
-
-# Trigger rebuild in CapRover
-# Or use webhook for auto-deployment
-```
-
-### Database Updates:
-```bash
-# Migration will run automatically on deployment via start.sh
-# Or run manually via CapRover terminal:
-npx prisma migrate deploy
-```
+Deployment sekarang jauh lebih simple dan reliable!

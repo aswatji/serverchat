@@ -406,10 +406,11 @@ socket.on("message_sent", (confirmation) => {
 
 ## Error Codes
 
-### Prisma Error Codes
+### Database Error Codes
 
-- `P2002` - Unique constraint violation
-- `P2025` - Record not found
+- `23505` - Unique constraint violation (PostgreSQL)
+- `23503` - Foreign key constraint violation
+- `42P01` - Table does not exist
 
 ### Custom Validation Errors
 

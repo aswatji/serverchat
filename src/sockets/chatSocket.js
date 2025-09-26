@@ -1,5 +1,5 @@
-const prisma = require("../config/database");
-const { updateLastMessage } = require("../controllers/messageController");
+const pool = require("../config/database");
+const { v4: uuidv4 } = require("uuid");
 
 const handleSocketConnection = (io) => {
   io.on("connection", (socket) => {
@@ -50,21 +50,27 @@ const handleSocketConnection = (io) => {
         }
 
         // Create message in database
-        const message = await prisma.message.create({
-          data: {
-            chat_id,
-            sent_by,
-            content: content.trim(),
-          },
-          include: {
-            sender: {
-              select: { uid: true, name: true, email: true },
-            },
-          },
-        });
+        const messageId = uuidv4();
 
-        // Update last message
-        await updateLastMessage(chat_id, sent_by, content.trim());
+        const result = await pool.query(
+          `
+          INSERT INTO "Message" (message_id, chat_id, sender_id, content, sent_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          RETURNING message_id, chat_id, sender_id, content, sent_at
+        `,
+          [messageId, chat_id, sent_by, content.trim()]
+        );
+
+        // Get sender details
+        const senderResult = await pool.query(
+          'SELECT uid, name, email FROM "User" WHERE uid = $1',
+          [sent_by]
+        );
+
+        const message = {
+          ...result.rows[0],
+          sender: senderResult.rows[0],
+        };
 
         // Emit message to all users in the chat room
         io.to(chat_id).emit("new_message", message);

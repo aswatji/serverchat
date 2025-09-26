@@ -1,188 +1,164 @@
-# Chat Server with Prisma
+# Chat Server
 
-A real-time chat server built with Node.js, Express, Socket.IO, and Prisma ORM using PostgreSQL database. This project follows a modular architecture with separate controllers, routes, middleware, and socket handlers.
+A real-time chat server built with Node.js, Express, Socket.IO, and PostgreSQL.
 
-## 🚀 Features
+## Features
 
-- **Real-time messaging** with Socket.IO
-- **User management** with CRUD operations
-- **Chat creation and management** between users
-- **Message history** with pagination
-- **Last message tracking** per user pair
-- **RESTful API endpoints** with proper validation
-- **Modular architecture** for maintainability
-- **Error handling** with custom middleware
-- **Input validation** and sanitization
-- **Typing indicators** and user status updates
-- **Graceful shutdown** handling
+- Real-time messaging with Socket.IO
+- RESTful API for user and chat management
+- PostgreSQL database with native SQL queries
+- User authentication and management
+- Chat room management
+- Message history
+- Typing indicators
+- User online/offline status
+- CORS enabled for cross-origin requests
 
-## 📁 Project Structure
+## Tech Stack
 
-```
-serverchat/
-├── src/
-│   ├── config/
-│   │   ├── database.js          # Prisma client configuration
-│   │   └── socket.js            # Socket.IO configuration
-│   ├── controllers/
-│   │   ├── userController.js    # User-related business logic
-│   │   ├── chatController.js    # Chat-related business logic
-│   │   └── messageController.js # Message-related business logic
-│   ├── middleware/
-│   │   ├── errorHandler.js      # Error handling middleware
-│   │   └── validation.js        # Input validation middleware
-│   ├── routes/
-│   │   ├── index.js            # Main router
-│   │   ├── userRoutes.js       # User routes
-│   │   ├── chatRoutes.js       # Chat routes
-│   │   └── messageRoutes.js    # Message routes
-│   ├── sockets/
-│   │   └── chatSocket.js       # Socket.IO event handlers
-│   └── utils/
-│       └── helpers.js          # Utility functions
-├── prisma/
-│   └── schema.prisma           # Database schema
-├── .env                        # Environment variables
-├── index.js                    # Main server file
-└── package.json               # Dependencies and scripts
-```
+- **Backend**: Node.js, Express.js
+- **Real-time**: Socket.IO
+- **Database**: PostgreSQL (with pg driver)
+- **Environment**: Docker support
 
-## Prerequisites
+## API Documentation
 
-- Node.js (v16 or higher)
-- PostgreSQL database
-- npm or yarn
+### Users
+- `GET /api/users` - Get all users
+- `POST /api/users` - Create a new user
+- `GET /api/users/:userId` - Get user by ID
+- `PUT /api/users/:userId` - Update user
+- `DELETE /api/users/:userId` - Delete user
+
+### Chats
+- `GET /api/chats/user/:userId` - Get user's chats
+- `POST /api/chats` - Create a new chat
+- `GET /api/chats/:chatId` - Get chat by ID
+- `DELETE /api/chats/:chatId` - Delete chat
+
+### Messages
+- `GET /api/messages/chat/:chatId` - Get messages in a chat
+- `POST /api/messages` - Send a new message
+- `GET /api/messages/:messageId` - Get message by ID
+- `PUT /api/messages/:messageId` - Update message
+- `DELETE /api/messages/:messageId` - Delete message
+
+## Socket Events
+
+### Client to Server
+- `join_chat` - Join a chat room
+- `leave_chat` - Leave a chat room
+- `send_message` - Send a message
+- `typing` - User is typing
+- `stop_typing` - User stopped typing
+- `user_online` - User came online
+- `user_offline` - User went offline
+
+### Server to Client
+- `message_received` - New message received
+- `user_typing` - Someone is typing
+- `user_stop_typing` - Someone stopped typing
+- `user_online` - User came online
+- `user_offline` - User went offline
+- `error` - Error occurred
 
 ## Installation
 
-1. Install dependencies:
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL database
+- npm or yarn
 
+### Setup
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd serverchat
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Set up your database:
-
-   - Create a PostgreSQL database
-   - Update the `DATABASE_URL` in `.env` file with your database credentials
-
-3. Generate Prisma client:
-
+3. Create a `.env` file based on `.env.example`:
 ```bash
-npm run prisma:generate
+cp .env.example .env
 ```
 
-4. Run database migrations:
-
-```bash
-npm run prisma:migrate
-```
-
-## Environment Variables
-
-Create a `.env` file in the root directory:
-
+4. Configure your database URL in `.env`:
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/serverchat?schema=public"
-PORT=3000
-NODE_ENV=development
+DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
 ```
 
-## Running the Application
-
-### Development mode with auto-restart:
-
+5. Set up the database by running the SQL schema:
 ```bash
-npm run dev
+# Connect to your PostgreSQL database and run:
+psql -d your_database -f database-schema.sql
 ```
 
-### Production mode:
-
+6. Start the server:
 ```bash
 npm start
 ```
 
-### Database management:
-
+For development:
 ```bash
-# Generate Prisma client
-npm run prisma:generate
-
-# Run migrations
-npm run prisma:migrate
-
-# Open Prisma Studio (database GUI)
-npm run prisma:studio
-
-# Reset database (careful: deletes all data)
-npm run prisma:reset
+npm run dev
 ```
 
-## API Endpoints
+## Docker Setup
 
-### Users
+1. Build the Docker image:
+```bash
+docker build -t serverchat .
+```
 
-- `GET /api/users` - Get all users
-- `POST /api/users` - Create a new user
+2. Run the container:
+```bash
+docker run -p 80:80 --env-file .env serverchat
+```
 
-### Chats
+## Environment Variables
 
-- `GET /api/chats/:userId` - Get all chats for a user
-- `POST /api/chats` - Create a new chat
-
-### Messages
-
-- `GET /api/messages/:chatId` - Get messages for a chat
-- `POST /api/messages` - Send a new message
-
-## Socket.IO Events
-
-### Client to Server:
-
-- `join_chat` - Join a chat room
-- `leave_chat` - Leave a chat room
-- `send_message` - Send a message
-
-### Server to Client:
-
-- `new_message` - Receive a new message
-- `error` - Receive error information
+- `DATABASE_URL` - PostgreSQL connection string
+- `PORT` - Server port (default: 80)
+- `NODE_ENV` - Environment (development/production)
 
 ## Database Schema
 
-The application uses the following models:
+The application uses the following main entities:
 
-- **User**: User information and relationships
-- **Chat**: Chat sessions between two users
+- **User**: Stores user information (uid, name, email)
+- **Chat**: Represents a chat between two users
 - **Message**: Individual messages in chats
-- **LastMessage**: Tracking of last messages per user pair
 
-## Example Usage
+Database schema is available in `database-schema.sql` file.
 
-### Create a user:
+## Key Changes from Prisma Version
 
-```bash
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John Doe", "email": "john@example.com"}'
-```
+✅ **Removed Prisma dependencies** - No more complex binary compatibility issues
+✅ **Native PostgreSQL queries** - Direct pg driver connection
+✅ **Simplified Docker setup** - No Prisma generation needed
+✅ **Better performance** - Direct SQL queries
+✅ **Easier deployment** - No ORM complications
 
-### Create a chat:
+## Deployment
 
-```bash
-curl -X POST http://localhost:3000/api/chats \
-  -H "Content-Type: application/json" \
-  -d '{"user1_id": "user1-uuid", "user2_id": "user2-uuid"}'
-```
+For CapRover or other container platforms:
 
-### Send a message:
+1. Ensure your `DATABASE_URL` environment variable is set
+2. Run the `database-schema.sql` on your PostgreSQL database
+3. Deploy using the provided Dockerfile
 
-```bash
-curl -X POST http://localhost:3000/api/messages \
-  -H "Content-Type: application/json" \
-  -d '{"chat_id": "chat-uuid", "sent_by": "user-uuid", "content": "Hello!"}'
-```
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
-ISC
+ISC License
