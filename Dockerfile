@@ -1,12 +1,8 @@
-# Use Node.js LTS version  
+# Use Node.js LTS version
 FROM node:18-slim
 
 # Set working directory
 WORKDIR /usr/src/app
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=80
 
 # Copy package files
 COPY package*.json ./
@@ -30,5 +26,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "http.get('http://localhost:80', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Start application directly
+# Start application
 CMD ["node", "index.js"]

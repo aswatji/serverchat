@@ -20,7 +20,7 @@ const app = express();
 const server = createServer(app);
 const io = initializeSocket(server);
 
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -29,10 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log("📝 Body:", JSON.stringify(req.body, null, 2));
-  }
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
@@ -45,10 +42,6 @@ app.get("/", (req, res) => {
     version: "1.0.0",
   });
 });
-
-// Test route for debugging
-const { testDatabaseConnection } = require("./src/controllers/testController");
-app.get("/test-db", testDatabaseConnection);
 
 // API routes
 app.use("/api", apiRoutes);

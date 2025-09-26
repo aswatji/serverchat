@@ -15,30 +15,11 @@ const getAllUsers = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   try {
     const { name, email } = req.body;
-    
-    // Validate required fields
-    if (!name || !email) {
-      return res.status(400).json({
-        error: "Validation error",
-        message: "Name and email are required",
-        received: { name, email }
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        error: "Validation error",
-        message: "Invalid email format"
-      });
-    }
-
     const uid = uuidv4();
 
     const result = await pool.query(
       'INSERT INTO "User" (uid, name, email, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING uid, name, email',
-      [uid, name.trim(), email.trim().toLowerCase()]
+      [uid, name, email]
     );
 
     res.status(201).json(result.rows[0]);
