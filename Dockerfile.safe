@@ -1,5 +1,8 @@
-# Use Node.js LTS version  
+# Use Node.js LTS version
 FROM node:18-slim
+
+# Install bash for startup script
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -21,6 +24,9 @@ COPY . .
 RUN groupadd -r nodejs && useradd -r -g nodejs nodejs && \
     chown -R nodejs:nodejs /usr/src/app
 
+# Make startup script executable
+RUN chmod +x start-caprover.sh
+
 USER nodejs
 
 # Expose port
@@ -30,5 +36,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD node -e "http.get('http://localhost:80', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Start application directly
-CMD ["node", "index.js"]
+# Start application with fallback
+CMD ["/bin/bash", "./start-caprover.sh"]

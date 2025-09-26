@@ -10,7 +10,7 @@ console.log("🔍 Database URL:", process.env.DATABASE_URL.replace(/:[^:@]*@/, '
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  ssl: false, // Disable SSL for this PostgreSQL server
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
