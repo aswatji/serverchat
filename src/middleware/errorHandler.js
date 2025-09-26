@@ -1,26 +1,61 @@
 const errorHandler = (err, req, res, next) => {
-  console.error("Error:", err);
+  // Log detailed error for debugging
+  console.error("❌ Error occurred:");
+  console.error("URL:", req.method, req.originalUrl);
+  console.error("Body:", req.body);
+  console.error("Error:", err.message);
+  console.error("Stack:", err.stack);
+  console.error("Code:", err.code);
 
-  if (err.code === "P2002") {
+  // PostgreSQL unique constraint violation
+  if (err.code === "23505") {
     return res.status(400).json({
       error: "Unique constraint violation",
-      message: "Data already exists",
+      message: "Data already exists (email might be duplicate)",
+      details: process.env.NODE_ENV === "development" ? err.detail : undefined
     });
   }
 
-  if (err.code === "P2025") {
-    return res.status(404).json({
-      error: "Record not found",
-      message: "The requested resource was not found",
+  // PostgreSQL foreign key constraint violation  
+  if (err.code === "23503") {
+    return res.status(400).json({
+      error: "Foreign key constraint violation",
+      message: "Referenced data does not exist",
+      details: process.env.NODE_ENV === "development" ? err.detail : undefined
     });
   }
 
+  // PostgreSQL table does not exist
+  if (err.code === "42P01") {
+    return res.status(500).json({
+      error: "Database schema error",
+      message: "Required table does not exist",
+      details: process.env.NODE_ENV === "development" ? err.message : "Database not properly configured"
+    });
+  }
+
+  // General database connection error
+  if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
+    return res.status(503).json({
+      error: "Database connection error",
+      message: "Unable to connect to database",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
+  }
+
+  // Validation errors
+  if (err.name === "ValidationError") {
+    return res.status(400).json({
+      error: "Validation error",
+      message: err.message
+    });
+  }
+
+  // Default internal server error
   res.status(500).json({
     error: "Internal server error",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong",
+    message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
+    details: process.env.NODE_ENV === "development" ? err.stack : undefined
   });
 };
 
