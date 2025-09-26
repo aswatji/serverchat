@@ -46,6 +46,10 @@ app.get("/", (req, res) => {
   });
 });
 
+// Test route for debugging
+const { testDatabaseConnection } = require("./src/controllers/testController");
+app.get("/test-db", testDatabaseConnection);
+
 // API routes
 app.use("/api", apiRoutes);
 
