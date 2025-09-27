@@ -9,6 +9,21 @@ const {
   deleteMessage,
 } = require("../controllers/messageController");
 
+// GET /api/messages - Get all messages info
+router.get("/", (req, res) => {
+  res.json({
+    message: "Message API endpoint",
+    description: "Use /api/messages/:chatId to get chat messages",
+    endpoints: {
+      "GET /:chatId": "Get messages for a chat",
+      "POST /": "Send a new message",
+      "GET /message/:messageId": "Get message by ID",
+      "PUT /message/:messageId": "Update message",
+      "DELETE /message/:messageId": "Delete message"
+    }
+  });
+});
+
 // GET /api/messages/:chatId - Get messages for a chat
 router.get("/:chatId", getChatMessages);
 

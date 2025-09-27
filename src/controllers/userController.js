@@ -3,12 +3,35 @@ const { v4: uuidv4 } = require("uuid");
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const result = await pool.query(
-      'SELECT uid, name, email FROM "User" ORDER BY created_at DESC'
+    // First try to check if table exists
+    const tableCheck = await pool.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'User')`
     );
-    res.json(result.rows);
+    
+    if (!tableCheck.rows[0].exists) {
+      return res.status(200).json({
+        message: "User table not found. Please run database schema setup.",
+        users: [],
+        setup_needed: true
+      });
+    }
+
+    const result = await pool.query(
+      'SELECT uid, name, email, created_at FROM "User" ORDER BY created_at DESC LIMIT 100'
+    );
+    
+    res.json({
+      message: "Users retrieved successfully",
+      count: result.rows.length,
+      users: result.rows
+    });
   } catch (error) {
-    next(error);
+    console.error('getAllUsers error:', error);
+    res.status(500).json({
+      error: "Database error",
+      message: error.message,
+      details: "Check database connection and schema"
+    });
   }
 };
 
